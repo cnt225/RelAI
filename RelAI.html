@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RelAI: 비즈니스를 잇고, AI로 살려낸다</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Public Trust Blue (bg-slate-50, text-slate-800, accent-blue-600, highlight-blue-700) -->
+    <!-- Application Structure Plan: The application is designed as a single-page narrative journey, rather than a static report. It guides the user from understanding the core problem ('The Crisis') through an interactive dashboard, to exploring the solution via a clickable ecosystem flow ('The Solution'), and finally to seeing the tangible outcomes ('The Impact'). This thematic, top-down structure allows users to grasp the big picture first and then delve into details (like technology or business model) based on their interest, promoting better engagement and comprehension than a linear document. -->
+    <!-- Visualization & Content Choices: 
+        - The Crisis (Problem): Report Info -> Statistics on aging CEOs, business closures. Goal -> Create urgency. Viz -> Interactive stat cards and a dynamic bar chart (Chart.js). Interaction -> Clicking on stats reveals more context. Justification -> Makes abstract numbers tangible and visually impactful.
+        - The Solution (Ecosystem): Report Info -> Found.AI, RelAI, P/E Fund phases. Goal -> Explain the system. Viz -> A clickable flow diagram built with HTML/Tailwind. Interaction -> Clicking each stage reveals its detailed functions. Justification -> Simplifies a complex multi-stage strategy into an easily navigable visual flow.
+        - The Impact (KPIs & Story): Report Info -> KPIs and the user journey. Goal -> Show results. Viz -> Animated number counters and an interactive story slider. Interaction -> Users drag a slider to reveal detailed story stages. Justification -> Turns a static timeline into an engaging, user-controlled narrative.
+        - Technology & Business Model: Report Info -> RAG, X-Road, Pricing Tiers. Goal -> Build trust and show viability. Viz -> Icon-based cards and an interactive tabbed table. Interaction -> Users can switch tabs to compare service tiers, with a clear highlight for the free tier for youth on the Pro plan. Justification -> Breaks down technical and financial details into digestible, easy-to-compare chunks while emphasizing social value.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 40vh;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 400px;
+            }
+        }
+        .nav-link {
+            transition: color 0.3s, border-bottom-color 0.3s;
+        }
+        .nav-link:hover {
+            color: #2563eb; /* blue-600 */
+        }
+        .nav-link.active {
+            color: #2563eb; /* blue-600 */
+            border-bottom: 2px solid #2563eb;
+        }
+        .fade-in {
+            animation: fadeIn 1s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .tab-button.active {
+            background-color: #2563eb; /* blue-600 */
+            color: white;
+        }
+        /* Custom Slider Styles */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]:focus {
+            outline: none;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 8px;
+            cursor: pointer;
+            background: #dbeafe; /* blue-100 */
+            border-radius: 5px;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 24px;
+            width: 24px;
+            border-radius: 50%;
+            background: #2563eb; /* blue-600 */
+            cursor: pointer;
+            margin-top: -8px; /* You need to specify a margin in Chrome, but in Firefox and IE it is automatic */
+            box-shadow: 0 0 5px rgba(0,0,0,0.2);
+        }
+        input[type=range]::-moz-range-track {
+            width: 100%;
+            height: 8px;
+            cursor: pointer;
+            background: #dbeafe;
+            border-radius: 5px;
+        }
+        input[type=range]::-moz-range-thumb {
+            height: 24px;
+            width: 24px;
+            border-radius: 50%;
+            background: #2563eb;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 0 5px rgba(0,0,0,0.2);
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+
+    <header id="header" class="bg-slate-50/80 backdrop-blur-lg sticky top-0 z-50 shadow-sm">
+        <nav class="container mx-auto px-6 py-3 flex justify-between items-center">
+            <a href="#" class="text-2xl font-bold"><span class="text-blue-700">Rel</span><span class="text-slate-800">AI</span></a>
+            <div class="hidden md:flex space-x-8">
+                <a href="#crisis" class="nav-link text-slate-600 font-medium pb-1">문제 인식</a>
+                <a href="#solution" class="nav-link text-slate-600 font-medium pb-1">솔루션</a>
+                <a href="#how-it-works" class="nav-link text-slate-600 font-medium pb-1">작동 방식</a>
+                <a href="#impact" class="nav-link text-slate-600 font-medium pb-1">기대 효과</a>
+                <a href="#business-model" class="nav-link text-slate-600 font-medium pb-1">사업 모델</a>
+            </div>
+            <div class="md:hidden">
+                <button id="mobile-menu-button" class="text-slate-800 focus:outline-none">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+                </button>
+            </div>
+        </nav>
+        <div id="mobile-menu" class="hidden md:hidden">
+            <a href="#crisis" class="block py-2 px-6 text-sm text-slate-600 hover:bg-blue-50">문제 인식</a>
+            <a href="#solution" class="block py-2 px-6 text-sm text-slate-600 hover:bg-blue-50">솔루션</a>
+            <a href="#how-it-works" class="block py-2 px-6 text-sm text-slate-600 hover:bg-blue-50">작동 방식</a>
+            <a href="#impact" class="block py-2 px-6 text-sm text-slate-600 hover:bg-blue-50">기대 효과</a>
+            <a href="#business-model" class="block py-2 px-6 text-sm text-slate-600 hover:bg-blue-50">사업 모델</a>
+        </div>
+    </header>
+
+    <main>
+        <section id="hero" class="py-20 md:py-32 bg-white">
+            <div class="container mx-auto px-6 text-center">
+                <h1 class="text-4xl md:text-6xl font-extrabold text-slate-900 leading-tight">
+                    <span class="text-blue-600">비즈니스를 이어주고,</span><br>AI로 <span class="text-blue-600">살려내는</span> 대한민국
+                </h1>
+                <p class="mt-6 max-w-3xl mx-auto text-lg text-slate-600">
+                    RelAI는 Relay(승계)와 AI(혁신)의 결합입니다. 가치 있는 사업을 다음 세대로 '이어주고', AI 기술로 '살려내어' 지역 소멸과 '그레이 쓰나미' 위기를 해결하는 국가대표 GovTech 플랫폼입니다.
+                </p>
+                <a href="#solution" class="mt-8 inline-block bg-blue-600 text-white font-bold py-3 px-8 rounded-lg shadow-lg hover:bg-blue-700 transition-transform transform hover:scale-105">
+                    솔루션 알아보기
+                </a>
+            </div>
+        </section>
+
+        <section id="crisis" class="py-16 md:py-24">
+            <div class="container mx-auto px-6">
+                <div class="text-center mb-12">
+                    <h2 class="text-3xl md:text-4xl font-bold">조용한 위기, 대한민국 경제의 현실</h2>
+                    <p class="mt-4 max-w-2xl mx-auto text-slate-600">우리가 해결하고자 하는 문제는 통계로 명확히 드러납니다. 고령화와 후계자 부재는 더 이상 미래의 일이 아닙니다.</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12 text-center">
+                    <div class="bg-white p-6 rounded-lg shadow-md">
+                        <div class="text-4xl font-extrabold text-blue-600" data-target="33.5">0</div>
+                        <p class="text-lg font-semibold mt-2">%</p>
+                        <p class="text-slate-600 mt-1">60세 이상 중소기업 CEO 비중 (2022)</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow-md">
+                        <div class="text-4xl font-extrabold text-blue-600" data-target="20.4">0</div>
+                        <p class="text-lg font-semibold mt-2">%</p>
+                        <p class="text-slate-600 mt-1">후계자를 찾지 못한 기업</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow-md">
+                        <div class="text-4xl font-extrabold text-blue-600" data-target="98">0</div>
+                        <p class="text-lg font-semibold mt-2">만 개 이상</p>
+                        <p class="text-slate-600 mt-1">연간 소상공인 폐업 수 (2023)</p>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 md:p-8 rounded-lg shadow-lg">
+                    <h3 class="text-xl md:text-2xl font-bold text-center mb-6">고령 CEO 비중의 급격한 증가</h3>
+                    <div class="chart-container">
+                        <canvas id="ceoAgeChart"></canvas>
+                    </div>
+                    <p class="text-center mt-4 text-slate-500 text-sm">10년 만에 2.4배 급증한 고령 CEO 비율은 대규모 은퇴와 사업체 소멸 위기가 임박했음을 보여줍니다.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="solution" class="py-16 md:py-24 bg-white">
+            <div class="container mx-auto px-6">
+                <div class="text-center mb-12">
+                    <h2 class="text-3xl md:text-4xl font-bold">단계적 생태계 구축 전략</h2>
+                    <p class="mt-4 max-w-2xl mx-auto text-slate-600">우리는 단 하나의 솔루션이 아닌, 유기적으로 연결된 3단계 생태계를 통해 문제를 근본적으로 해결합니다.</p>
+                </div>
+
+                <div class="flex flex-col md:flex-row items-center justify-center gap-4 md:gap-8">
+                    <div class="solution-step text-center p-6 border-2 border-transparent rounded-lg cursor-pointer hover:bg-blue-50" data-step="1">
+                        <div class="text-3xl mb-2">🚀</div>
+                        <h3 class="text-xl font-bold">1단계: Found.AI</h3>
+                        <p class="text-sm text-slate-500">창업 기반 구축</p>
+                    </div>
+                    <div class="text-4xl text-slate-300 font-light hidden md:block">→</div>
+                    <div class="text-4xl text-slate-300 font-light block md:hidden">↓</div>
+                    <div class="solution-step text-center p-6 border-2 border-transparent rounded-lg cursor-pointer hover:bg-blue-50" data-step="2">
+                        <div class="text-3xl mb-2">🤝</div>
+                        <h3 class="text-xl font-bold">2단계: RelAI</h3>
+                        <p class="text-sm text-slate-500">M&A 허브 & 혁신</p>
+                    </div>
+                    <div class="text-4xl text-slate-300 font-light hidden md:block">→</div>
+                     <div class="text-4xl text-slate-300 font-light block md:hidden">↓</div>
+                    <div class="solution-step text-center p-6 border-2 border-transparent rounded-lg cursor-pointer hover:bg-blue-50" data-step="3">
+                        <div class="text-3xl mb-2">🌱</div>
+                        <h3 class="text-xl font-bold">3단계: 생태계 완성</h3>
+                        <p class="text-sm text-slate-500">P/E 펀드 & 육성</p>
+                    </div>
+                </div>
+
+                <div id="solution-details" class="mt-12 bg-slate-100 p-8 rounded-lg min-h-[250px] transition-all duration-500">
+                </div>
+            </div>
+        </section>
+
+        <section id="how-it-works" class="py-16 md:py-24">
+             <div class="container mx-auto px-6">
+                <div class="text-center mb-12">
+                    <h2 class="text-3xl md:text-4xl font-bold">신뢰와 혁신을 위한 기술</h2>
+                    <p class="mt-4 max-w-2xl mx-auto text-slate-600">RelAI는 최신 AI 기술과 최고 수준의 데이터 보안 원칙을 결합하여 신뢰할 수 있는 서비스를 제공합니다.</p>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="bg-white p-8 rounded-lg shadow-lg">
+                        <div class="flex items-center mb-4">
+                            <div class="text-3xl mr-4">🧠</div>
+                            <h3 class="text-2xl font-bold">소버린 AI & RAG</h3>
+                        </div>
+                        <p class="text-slate-600">대한민국 자체 LLM과 '검색 증강 생성(RAG)' 기술을 결합하여 AI의 '환각 현상'을 원천 방지합니다. 정부 고시, 법령 등 신뢰할 수 있는 공공 데이터만을 참조하여 정확하고 근거 있는 정보를 제공함으로써 GovTech 서비스의 신뢰성을 확보합니다.</p>
+                    </div>
+                    <div class="bg-white p-8 rounded-lg shadow-lg">
+                         <div class="flex items-center mb-4">
+                            <div class="text-3xl mr-4">🛡️</div>
+                            <h3 class="text-2xl font-bold">X-Road 데이터 거버넌스</h3>
+                        </div>
+                        <p class="text-slate-600">에스토니아의 'X-Road' 원칙에 따라 데이터를 분산 관리합니다. 사용자의 원본 데이터를 저장하지 않고, 암호화된 '데이터 교환 계층'으로만 기능하여 데이터 유출 및 오용 위험을 원천 차단하고 완벽한 데이터 주권을 보장합니다.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="impact" class="py-16 md:py-24 bg-white">
+            <div class="container mx-auto px-6">
+                <div class="text-center mb-12">
+                    <h2 class="text-3xl md:text-4xl font-bold">측정 가능한 사회·경제적 기대 효과</h2>
+                    <p class="mt-4 max-w-2xl mx-auto text-slate-600">우리의 성공은 구체적인 숫자로 증명될 것입니다. RelAI는 지역 경제에 실질적인 변화를 만들어냅니다.</p>
+                </div>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-8 text-center mb-16">
+                    <div>
+                        <p class="text-4xl md:text-5xl font-extrabold text-blue-600" data-target="500">0</p>
+                        <p class="mt-2 text-slate-600">지역 사업체 보존</p>
+                    </div>
+                    <div>
+                        <p class="text-4xl md:text-5xl font-extrabold text-blue-600" data-target="2000">0</p>
+                        <p class="mt-2 text-slate-600">일자리 창출/유지</p>
+                    </div>
+                    <div>
+                        <p class="text-4xl md:text-5xl font-extrabold text-blue-600" data-target="500">0</p>
+                        <p class="mt-2 text-slate-600">신규 청년 사업가</p>
+                    </div>
+                     <div>
+                        <p class="text-4xl md:text-5xl font-extrabold text-blue-600" data-target="15">0</p>
+                        <p class="mt-2 text-slate-600">% 이상 매출 증가</p>
+                    </div>
+                </div>
+
+                <div class="bg-slate-100 p-8 rounded-lg">
+                    <h3 class="text-2xl font-bold text-center mb-4">성공 스토리: '박사장님'과 '최대리'의 여정</h3>
+                    <p class="text-center text-slate-500 mb-8">아래 슬라이더를 움직여 각 단계의 이야기를 확인해보세요.</p>
+                    
+                    <div id="story-display" class="bg-white p-6 rounded-lg mb-8 min-h-[200px] transition-all duration-300 ease-in-out">
+                        <!-- Story content will be injected here by JS -->
+                    </div>
+
+                    <div class="w-full px-4">
+                        <input id="story-slider" type="range" min="1" max="4" value="1" class="w-full">
+                        <div class="flex justify-between text-xs text-slate-500 mt-2 px-1">
+                            <span>1. 만남</span>
+                            <span>2. 연결</span>
+                            <span>3. 혁신</span>
+                            <span>4. 성장</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="business-model" class="py-16 md:py-24">
+            <div class="container mx-auto px-6">
+                <div class="text-center mb-12">
+                    <h2 class="text-3xl md:text-4xl font-bold">지속 가능한 비즈니스 모델</h2>
+                    <p class="mt-4 max-w-2xl mx-auto text-slate-600">사회적 가치와 재무적 지속가능성을 동시에 추구하는 다각화된 수익 구조를 갖추고 있습니다.</p>
+                </div>
+                
+                <div class="max-w-4xl mx-auto bg-white rounded-lg shadow-lg overflow-hidden">
+                    <div class="flex justify-center p-2 bg-slate-100 rounded-t-lg">
+                        <button class="tab-button flex-1 py-2 px-4 font-semibold rounded-md transition active" data-tier="basic">기본</button>
+                        <button class="tab-button flex-1 py-2 px-4 font-semibold rounded-md transition" data-tier="pro">프로</button>
+                        <button class="tab-button flex-1 py-2 px-4 font-semibold rounded-md transition" data-tier="enterprise">엔터프라이즈</button>
+                    </div>
+                    <div id="tier-details" class="p-8">
+                        <!-- Tier details will be injected here by JS -->
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-slate-800 text-white py-12">
+        <div class="container mx-auto px-6 text-center">
+            <h3 class="text-2xl font-bold"><span class="text-blue-500">Rel</span><span class="text-white">AI</span></h3>
+            <p class="mt-2 text-slate-400">대한민국의 지속 가능한 미래를 만들어갑니다.</p>
+            <div class="mt-6 text-sm text-slate-500">
+                &copy; 2025 RelAI. All Rights Reserved.
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const ceoAgeChartCtx = document.getElementById('ceoAgeChart').getContext('2d');
+            const ceoAgeChart = new Chart(ceoAgeChartCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['2012', '2022'],
+                    datasets: [{
+                        label: '60세 이상 CEO 비중 (%)',
+                        data: [14.1, 33.5],
+                        backgroundColor: [
+                            'rgba(156, 163, 175, 0.6)', // gray-400
+                            'rgba(37, 99, 235, 0.6)'    // blue-700
+                        ],
+                        borderColor: [
+                            'rgba(156, 163, 175, 1)',
+                            'rgba(37, 99, 235, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: '비중 (%)'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return ` ${context.dataset.label}: ${context.raw}%`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            function animateValue(obj, start, end, duration) {
+                let startTimestamp = null;
+                const step = (timestamp) => {
+                    if (!startTimestamp) startTimestamp = timestamp;
+                    const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                    let currentVal = progress * (end - start) + start;
+                    if (end.toString().includes('.')) {
+                        obj.innerHTML = currentVal.toFixed(1);
+                    } else {
+                        obj.innerHTML = Math.floor(currentVal).toLocaleString();
+                    }
+                    if (progress < 1) {
+                        window.requestAnimationFrame(step);
+                    } else {
+                        obj.innerHTML = end.toLocaleString();
+                    }
+                };
+                window.requestAnimationFrame(step);
+            }
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const targetValue = parseFloat(entry.target.getAttribute('data-target'));
+                        animateValue(entry.target, 0, targetValue, 1500);
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.5 });
+            
+            document.querySelectorAll('[data-target]').forEach(el => {
+                observer.observe(el);
+            });
+
+            const solutionSteps = document.querySelectorAll('.solution-step');
+            const solutionDetailsContainer = document.getElementById('solution-details');
+            const solutionData = {
+                '1': {
+                    title: '1단계: Found.AI - 창업의 기반을 다지고 새로운 길을 제시하다',
+                    content: "예비 창업가를 위한 올인원 창업 지원 플랫폼입니다. AI 시장 분석, 아이디어 검증, 사업 계획 지원을 통해 창업의 허들을 낮춥니다. 이 과정에서 데이터에 기반하여 신규 창업보다 검증된 기존 사업을 인수하는 '레거시 M&A'가 더 현명한 선택일 수 있음을 제시하며, 자연스럽게 RelAI로 사용자를 연결합니다."
+                },
+                '2': {
+                    title: '2단계: RelAI - M&A 허브의 본격화와 가치 증대',
+                    content: "본격적인 M&A 매칭 및 경영 혁신 플랫폼입니다. 신뢰 기반의 마켓플레이스를 제공하고, 인수된 사업의 성공을 돕는 'Value-up Package'(AI 툴킷)와 디지털 전환을 돕는 전문가 'RelAI-gent' 프로그램을 통해 거래 중개를 넘어 사업의 성공까지 지원합니다."
+                },
+                '3': {
+                    title: '3단계: 생태계 완성 - P/E 펀드 및 청년 사업가 육성',
+                    content: "단순 플랫폼을 넘어 능동적인 경제 플레이어로 진화합니다. 국가 지원금 등으로 펀드를 조성해 잠재력 있는 사업을 직접 인수하고, AI 솔루션으로 가치를 극대화한 뒤 유능한 청년 경영인에게 재매각합니다. 이를 통해 청년 사업가를 육성하는 새로운 성공의 사다리를 제공합니다."
+                }
+            };
+
+            function updateSolutionDetails(step) {
+                const data = solutionData[step];
+                solutionDetailsContainer.innerHTML = `
+                    <h4 class="text-2xl font-bold mb-4 fade-in">${data.title}</h4>
+                    <p class="text-slate-600 fade-in">${data.content}</p>
+                `;
+                solutionSteps.forEach(s => {
+                    s.classList.remove('border-blue-500', 'bg-blue-50');
+                    if(s.dataset.step === step) {
+                        s.classList.add('border-blue-500', 'bg-blue-50');
+                    }
+                });
+            }
+            
+            solutionSteps.forEach(step => {
+                step.addEventListener('click', () => updateSolutionDetails(step.dataset.step));
+            });
+            updateSolutionDetails('1');
+
+            const storySlider = document.getElementById('story-slider');
+            const storyDisplay = document.getElementById('story-display');
+            const storyData = {
+                '1': {
+                    title: '1. 만남: 위기와 기회의 교차점',
+                    content: "30년간 기계 부품 공장을 운영해 온 박사장님은 후계자 없이 은퇴를 고민합니다. 한편, 대기업에 다니던 최대리는 창업을 꿈꾸지만 막막함을 느낍니다. 박사장님은 RelAI에 공장을 등록하고, 최대리는 Found.AI에서 '인수를 통한 창업(ETA)'이라는 새로운 길을 발견하며 박사장님의 공장을 추천받습니다."
+                },
+                '2': {
+                    title: '2. 연결: 신뢰와 데이터 기반의 계약',
+                    content: "RelAI의 AI 가치평가 시스템은 양측이 모두 납득할 합리적인 인수 가격을 제시합니다. 또한, 플랫폼과 연계된 정책자금 컨설팅은 최대리가 정부의 청년 창업가 승계 지원 대출을 낮은 금리로 받을 수 있도록 도와, 자본 부담을 크게 덜어줍니다. 투명한 정보와 체계적인 지원 속에서 두 사람의 신뢰가 쌓이고, 성공적으로 인수 계약이 체결됩니다."
+                },
+                '3': {
+                    title: '3. 혁신: 노하우와 기술의 융합',
+                    content: "인수는 끝이 아닌 시작입니다. 최대리는 RelAI의 'AI 툴킷'을 활용해 낡은 수기 장부를 클라우드 ERP로 전환하고, 온라인으로 새로운 고객사를 발굴합니다. RelAI에서 파견된 'RelAI-gent'가 이 모든 과정을 돕습니다. 박사장님은 '기술 고문'으로 남아 평생의 노하우를 최대리에게 아낌없이 전수하며 시너지를 만듭니다."
+                },
+                '4': {
+                    title: '4. 성장: 지역과 함께 만드는 미래',
+                    content: "1년 후, 공장의 매출은 20% 증가했고, 최대리는 지역 청년 2명을 추가로 고용했습니다. 박사장님의 유산은 최신 기술과 만나 새로운 성장을 이뤘고, 최대리는 자신의 고향에서 성공한 청년 사업가로 자리 잡았습니다. 이들의 성공 스토리는 지역 사회에 새로운 희망을 불어넣는 모델이 됩니다."
+                }
+            };
+
+            function updateStoryContent(stage) {
+                const data = storyData[stage];
+                storyDisplay.innerHTML = `
+                    <div class="fade-in">
+                        <h4 class="text-xl font-bold text-blue-700 mb-2">${data.title}</h4>
+                        <p class="text-slate-600">${data.content}</p>
+                    </div>
+                `;
+            }
+            storySlider.addEventListener('input', (e) => {
+                updateStoryContent(e.target.value);
+            });
+            updateStoryContent('1');
+
+
+            const tierData = {
+                basic: {
+                    title: '기본 (Basic)',
+                    price: '무료',
+                    fee: '거래 성사 시 3.5%',
+                    desc: '예비 창업가, 소규모 매수/매도 희망자를 위한 필수 기능 제공',
+                    features: ['매물 검색', '기본 경영 진단 리포트', '플랫폼 기본 기능 이용']
+                },
+                pro: {
+                    title: '프로 (Pro)',
+                    price: '월 50,000원',
+                    fee: '거래 성사 시 2.0%',
+                    desc: '본격적인 승계를 준비하는 기업과 청년 창업가를 위한 고급 기능. 대학생 및 청년 창업가에게는 무료!',
+                    features: ['기본 기능 모두 포함', 'AI 가치평가 리포트', 'CRM 및 자동화 마케팅 툴', '안전한 데이터룸 이용']
+                },
+                enterprise: {
+                    title: '엔터프라이즈 (Enterprise)',
+                    price: '월 200,000원',
+                    fee: '거래 성사 시 0.7%',
+                    desc: '중규모 기업, 전문 투자자, PE를 위한 종합 솔루션',
+                    features: ['프로 기능 모두 포함', 'AI 컨설팅 챗봇 무제한 이용', '심층 데이터 분석 및 리포트', "'RelAI-gent' 파견 서비스 할인"]
+                }
+            };
+
+            const tierDetailsContainer = document.getElementById('tier-details');
+            const tabButtons = document.querySelectorAll('.tab-button');
+
+            function updateTierDetails(tier) {
+                const data = tierData[tier];
+                let formattedDesc = data.desc;
+                if (tier === 'pro') {
+                    formattedDesc = data.desc.replace(/(대학생 및 청년 창업가에게는 무료!)/, '<span class="block mt-2 font-bold text-blue-600 bg-blue-100 rounded-md p-2 text-center">$1</span>');
+                }
+
+                tierDetailsContainer.innerHTML = `
+                    <div class="fade-in">
+                        <h4 class="text-2xl font-bold text-blue-600">${data.title}</h4>
+                        <p class="text-3xl font-bold mt-2">${data.price} <span class="text-lg font-normal text-slate-500">/ M&A 수수료: ${data.fee}</span></p>
+                        <div class="mt-4 text-slate-600">${formattedDesc}</div>
+                        <ul class="mt-6 space-y-3">
+                            ${data.features.map(f => `<li class="flex items-center"><span class="text-green-500 mr-2">✔</span>${f}</li>`).join('')}
+                        </ul>
+                    </div>
+                `;
+                tabButtons.forEach(btn => {
+                    btn.classList.remove('active');
+                    if (btn.dataset.tier === tier) {
+                        btn.classList.add('active');
+                    }
+                });
+            }
+
+            tabButtons.forEach(btn => {
+                btn.addEventListener('click', () => updateTierDetails(btn.dataset.tier));
+            });
+            updateTierDetails('basic');
+
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            mobileMenuButton.addEventListener('click', () => {
+                mobileMenu.classList.toggle('hidden');
+            });
+
+            const navLinks = document.querySelectorAll('.nav-link, #mobile-menu a');
+            const sections = document.querySelectorAll('section');
+
+            const sectionObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        document.querySelectorAll('.nav-link').forEach(link => {
+                            link.classList.remove('active');
+                            if (link.getAttribute('href').substring(1) === entry.target.id) {
+                                link.classList.add('active');
+                            }
+                        });
+                    }
+                });
+            }, { rootMargin: "-50% 0px -50% 0px" });
+
+            sections.forEach(section => {
+                sectionObserver.observe(section);
+            });
+
+            navLinks.forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const targetId = link.getAttribute('href');
+                    document.querySelector(targetId).scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                    if (mobileMenu.classList.contains('hidden') === false) {
+                        mobileMenu.classList.add('hidden');
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
